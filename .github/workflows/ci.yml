@@ -1,0 +1,23 @@
+name: policy-ci
+on: [push, pull_request]
+jobs:
+  validate-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install ansible-core pyyaml jinja2 pytest
+      - name: Unit tests for the policy checker
+        run: pytest -q tests
+      - name: Playbook syntax check
+        run: ansible-playbook --syntax-check playbooks/build.yml
+      - name: Validate policy and render Cisco configs
+        run: ansible-playbook playbooks/build.yml
+      - name: A bad policy must fail the build
+        run: "! ansible-playbook playbooks/build.yml -e policy_file=$PWD/tests/fixtures/bad_policy.yml"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cisco-configs
+          path: build/

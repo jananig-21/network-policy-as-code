@@ -1,0 +1,10 @@
+! Generated from {{ policy_name }} by network-policy-as-code. Do not edit by hand.
+{% for name, o in objects.items() if name != 'any' %}
+object network {{ name }}
+ subnet {{ o.cidr.split('/')[0] }} {{ o.cidr | to_netmask }}
+{% endfor %}
+{% for r in rules %}
+access-list {{ policy_name }} remark {{ r.name }}: {{ r.justification }}
+access-list {{ policy_name }} extended {{ r.action }} {{ r.proto }} {{ 'any' if r.src == 'any' else 'object ' ~ r.src }} {{ 'any' if r.dst == 'any' else 'object ' ~ r.dst }}{% if r.port is defined %} eq {{ r.port }}{% endif %}{% if r.action == 'deny' %} log{% endif %}
+
+{% endfor %}

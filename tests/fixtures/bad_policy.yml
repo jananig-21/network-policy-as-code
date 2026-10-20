@@ -1,0 +1,10 @@
+policy_name: BAD
+objects:
+  any: {cidr: 0.0.0.0/0}
+  lan: {cidr: 10.0.0.0/8}
+  host: {cidr: 10.0.0.5/32}
+rules:
+  - {name: allow-all, src: any, dst: any, proto: ip, action: permit, justification: temp}
+  - {name: telnet-in, src: any, dst: host, proto: tcp, port: 23, action: permit}
+  - {name: lan-https, src: lan, dst: host, proto: tcp, port: 443, action: permit, justification: x}
+  - {name: lan-https, src: lan, dst: host, proto: tcp, port: 443, action: deny, justification: dup}

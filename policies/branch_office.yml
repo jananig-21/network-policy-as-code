@@ -1,0 +1,53 @@
+# Firewall policy for a small branch office, written once and rendered to
+# Cisco ASA and Cisco IOS ACL syntax by the Ansible playbook.
+policy_name: BRANCH-OFFICE
+objects:
+  any: {cidr: 0.0.0.0/0}
+  corp_lan: {cidr: 10.10.0.0/16}
+  dmz_web: {cidr: 172.16.10.0/24}
+  mgmt_jump: {cidr: 10.10.250.10/32}
+  ad_servers: {cidr: 10.10.1.0/28}
+  dns_resolvers: {cidr: 10.10.1.53/32}
+
+rules:
+  - name: web-https-in
+    src: any
+    dst: dmz_web
+    proto: tcp
+    port: 443
+    action: permit
+    justification: Public HTTPS to DMZ web tier
+  - name: lan-to-dns
+    src: corp_lan
+    dst: dns_resolvers
+    proto: udp
+    port: 53
+    action: permit
+    justification: Internal name resolution
+  - name: lan-to-ad-ldaps
+    src: corp_lan
+    dst: ad_servers
+    proto: tcp
+    port: 636
+    action: permit
+    justification: LDAPS to directory servers
+  - name: mgmt-ssh
+    src: mgmt_jump
+    dst: dmz_web
+    proto: tcp
+    port: 22
+    action: permit
+    justification: Admin SSH only from the jump host
+  - name: lan-web-out
+    src: corp_lan
+    dst: any
+    proto: tcp
+    port: 443
+    action: permit
+    justification: Outbound HTTPS for users
+  - name: default-deny
+    src: any
+    dst: any
+    proto: ip
+    action: deny
+    justification: Explicit default deny with logging

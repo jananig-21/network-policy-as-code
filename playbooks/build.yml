@@ -1,0 +1,42 @@
+# Validate a firewall policy and render it to Cisco ASA and Cisco IOS ACLs.
+# Runs locally; no network devices are needed.
+#   ansible-playbook playbooks/build.yml -e policy_file=policies/branch_office.yml
+- name: Build firewall configs from policy-as-code
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    policy_file: "{{ playbook_dir }}/../policies/branch_office.yml"
+    out_dir: "{{ playbook_dir }}/../build"
+  tasks:
+    - name: Load policy
+      ansible.builtin.include_vars:
+        file: "{{ policy_file }}"
+
+    - name: Run static policy checks (fails the build on any ERROR)
+      ansible.builtin.command:
+        argv: ["{{ ansible_playbook_python }}", "{{ playbook_dir }}/../validator/policy_check.py", "{{ policy_file }}"]
+      register: check
+      changed_when: false
+
+    - name: Show policy check results
+      ansible.builtin.debug:
+        var: check.stdout_lines
+
+    - name: Create output directory
+      ansible.builtin.file:
+        path: "{{ out_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Render Cisco ASA access list
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../templates/cisco_asa.j2"
+        dest: "{{ out_dir }}/{{ policy_name | lower }}_asa.cfg"
+        mode: "0644"
+
+    - name: Render Cisco IOS extended ACL
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../templates/cisco_ios.j2"
+        dest: "{{ out_dir }}/{{ policy_name | lower }}_ios.cfg"
+        mode: "0644"

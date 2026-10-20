@@ -1,0 +1,7 @@
+! Generated from {{ policy_name }} by network-policy-as-code. Do not edit by hand.
+ip access-list extended {{ policy_name }}
+{% for r in rules %}
+ remark {{ r.name }}: {{ r.justification }}
+ {{ r.action }} {{ r.proto }} {{ 'any' if r.src == 'any' else (objects[r.src].cidr.split('/')[0] ~ ' ' ~ (objects[r.src].cidr | to_wildcard)) }} {{ 'any' if r.dst == 'any' else (objects[r.dst].cidr.split('/')[0] ~ ' ' ~ (objects[r.dst].cidr | to_wildcard)) }}{% if r.port is defined %} eq {{ r.port }}{% endif %}{% if r.action == 'deny' %} log{% endif %}
+
+{% endfor %}
