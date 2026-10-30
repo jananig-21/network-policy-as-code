@@ -1,4 +1,5 @@
-# Validate a firewall policy and render it to Cisco ASA and Cisco IOS ACLs.
+# Validate a firewall policy and render it to Cisco ASA and Cisco IOS ACLs
+# and to Terraform for AWS security groups.
 # Runs locally; no network devices are needed.
 #   ansible-playbook playbooks/build.yml -e policy_file=policies/branch_office.yml
 - name: Build firewall configs from policy-as-code
@@ -40,3 +41,8 @@
         src: "{{ playbook_dir }}/../templates/cisco_ios.j2"
         dest: "{{ out_dir }}/{{ policy_name | lower }}_ios.cfg"
         mode: "0644"
+
+    - name: Render Terraform for AWS security groups
+      ansible.builtin.command:
+        argv: ["{{ ansible_playbook_python }}", "{{ playbook_dir }}/../renderers/aws_sg.py", "{{ policy_file }}", "{{ out_dir }}/{{ policy_name | lower }}_aws"]
+      changed_when: true
